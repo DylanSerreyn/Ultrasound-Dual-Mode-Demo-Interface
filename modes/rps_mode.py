@@ -9,7 +9,7 @@ class RPSMode:
 
     '''
 
-    def __init__(self, countdown_ms=3000, window_ms=3000, k_samples=7):
+    def __init__(self, countdown_ms=0, window_ms=3000, k_samples=7):
         self.countdown_ms = countdown_ms
         self.window_ms = window_ms
         self.k_samples = k_samples 
@@ -26,7 +26,7 @@ class RPSMode:
 
         #Capture window loop
         while time.perf_counter() < deadline and len(samples) < self.k_samples:
-            token, t_event = read_fn(self)
+            token, t_event = read_fn()
             if token in RPS_CLASSES:
                 samples.append((token, t_event))
             time.sleep(0.001)
