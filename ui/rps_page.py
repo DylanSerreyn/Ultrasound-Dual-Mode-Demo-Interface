@@ -63,7 +63,7 @@ class RPSPage(QWidget):
     def __init__(self, on_back_clicked, parent=None):
         super().__init__(parent)
 
-        self.mode = RPSMode(countdown_ms=3000, window_ms=3000, k_samples=7)
+        self.mode = RPSMode(countdown_ms=0, window_ms=1000, k_samples=5)
         
         # Input buffer for GUI-Captured keys
         self.key_buffer = KeyBuffer()
@@ -95,7 +95,7 @@ class RPSPage(QWidget):
         boxes.addWidget(self.opp_box)
 
         # Metrics Line
-        self.metrics = QLabel("Confidence: -  Latency: - ms  (n=-, window=- ms)")
+        self.metrics = QLabel("Confidence: -  Latency(last): - ms  Latency(first): - ms  (n=-, window=- ms)")
         self.metrics.setAlignment(Qt.AlignCenter)
         self.metrics.setStyleSheet("font-size: 13px; margin: 6px;")
 
@@ -190,9 +190,10 @@ class RPSPage(QWidget):
         self._set_box_value(self.your_pred_box, "-")
         self._set_box_value(self.outcome_box, "-")
         self._set_box_value(self.opp_box, "-")
-        self.metrics.setText("Confidence: -  Latency: - ms  (n=-, window=- ms )")
+        self.metrics.setText("Confidence: -  Latency(last): - ms  Latency(first): - ms  (n=-, window=- ms )")
         self.status.setText("Get ready...")
         self.setFocus()
+        self.grabKeyboard()
         self.key_buffer.clear()
 
         # Start Worker thread to run a blocking trial
@@ -209,7 +210,7 @@ class RPSPage(QWidget):
         self.status.setText("Go! (Press R / P / S)")
         self._countdown_timer.stop()
 
-        QTimer.singleShot(50, self._launch_worker)
+        QTimer.singleShot(0, self._launch_worker)
 
     def _update_countdown_label(self):
         self.status.setText(f"{self._countdown_remaining}...")
@@ -228,6 +229,7 @@ class RPSPage(QWidget):
 
     def _trial_finished(self, result: dict, opponent: str):
         # Update UI With Results
+        self.releaseKeyboard()
         user_choice = result["prediction"]
         self._set_box_value(self.your_pred_box, user_choice)
         self._set_box_value(self.opp_box, opponent)
@@ -247,9 +249,13 @@ class RPSPage(QWidget):
         )
 
         # Metrics
+        lat_last = result.get("latency_last_ms", result.get("latency_ms", 0.0))
+        lat_first = result.get("latency_first_ms", 0.0)
+
         self.metrics.setText(
             f"Confidence: {result['confidence']:.2f}  "
-            f"Latency: {result['latency_ms']:.1f} ms  "
+            f"Latency(last): {lat_last:.1f} ms  "
+            f"Latency(first): {lat_first:.1f} ms  "
             f"(n={result['n_samples']}, window = {result['window_ms']} ms)"
         )
 
