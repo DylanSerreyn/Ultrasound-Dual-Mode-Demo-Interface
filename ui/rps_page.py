@@ -63,7 +63,7 @@ class RPSPage(QWidget):
     def __init__(self, on_back_clicked, parent=None):
         super().__init__(parent)
 
-        self.mode = RPSMode(countdown_ms=0, window_ms=1000, k_samples=5)
+        self.mode = RPSMode(countdown_ms=0, window_ms=2000, k_samples=5)
         
         # Input buffer for GUI-Captured keys
         self.key_buffer = KeyBuffer()
@@ -73,6 +73,13 @@ class RPSPage(QWidget):
         self.win_count = 0
         self.lose_count = 0
         self.tie_count = 0
+
+        # Running sums for summary report 
+        self._trial_count = 0
+        self._sum_conf = 0.0
+        self._sum_lat_last = 0.0
+        self._sum_lat_first = 0.0
+        self._sum_n = 0
 
         # Title
         title = QLabel("Rock-Paper-Scissors")
@@ -88,6 +95,11 @@ class RPSPage(QWidget):
         self.your_pred_box = self._make_big_box("Your Prediction", "-")
         self.outcome_box   = self._make_big_box("Outcome (W/L/T)", "-")
         self.opp_box       = self._make_big_box("Opponent's Choice", "-")
+
+        # Summary label
+        self.summary_label = QLabel("Summary: -")
+        self.summary_label.setAlignment(Qt.AlignCenter)
+        self.summary_label.setStyleSheet("font-size: 13px; margin: 6px; color: #333;")
 
         boxes = QHBoxLayout()
         boxes.addWidget(self.your_pred_box)
@@ -113,10 +125,15 @@ class RPSPage(QWidget):
         self.back_btn.setFixedHeight(36)
         self.back_btn.clicked.connect(on_back_clicked)
 
+        self.summary_btn = QPushButton("Generate Summary Report")
+        self.summary_btn.setFixedHeight(36)
+        self.summary_btn.clicked.connect(self._generate_summary)
+
         btn_row = QHBoxLayout()
         btn_row.addStretch()
         btn_row.addWidget(self.start_btn)
         btn_row.addWidget(self.next_btn)
+        btn_row.addWidget(self.summary_btn)
         btn_row.addWidget(self.back_btn)
         btn_row.addStretch()
 
@@ -127,6 +144,7 @@ class RPSPage(QWidget):
         root.addSpacing(8)
         root.addLayout(boxes)
         root.addSpacing(8)
+        root.addWidget(self.summary_label)
         root.addWidget(self.metrics)
         root.addSpacing(8)
         root.addLayout(btn_row)
@@ -243,6 +261,14 @@ class RPSPage(QWidget):
         else:
             self.tie_count += 1
 
+        lat_last = result.get("latency_last_ms", result.get("latency_ms", 0.0))
+        lat_first = result.get("latency_first_ms", 0.0)
+        self._trial_count += 1
+        self._sum_conf += result.get("confidence", 0.0)
+        self._sum_lat_last += lat_last
+        self._sum_lat_first += lat_first
+        self._sum_n += result.get("n_samples", 0)
+
         self._set_box_value(self.outcome_box, out)
         self.score_label.setText(
             f"Wins: {self.win_count}  Losses: {self.lose_count}  Ties: {self.tie_count}"
@@ -262,7 +288,30 @@ class RPSPage(QWidget):
         self.status.setText("Trial Complete.")
         self.start_btn.setEnabled(True)
         self.next_btn.setEnabled(True)
+
+    def _generate_summary(self):
+        """
+        Compute and display a summary report across all completed trials
+        """
                     
+        if self._trial_count == 0:
+            self.summary_label.setText("Summary Not Available, No Trials Yet.")
+            return 
+        
+        avg_conf = self._sum_conf / self._trial_count
+        avg_lat_last = self._sum_lat_last / self._trial_count
+        avg_lat_first = self._sum_lat_first / self._trial_count
+        avg_n = self._sum_n / self._trial_count
+
+        self.summary_label.setText(
+            f"| Number of Trials: {self._trial_count}  | "
+            f"Average Confidence: {avg_conf:.2f}  | "
+            f"Average N_Samples: {avg_n:.1f} |"
+            f"\nAverage Latency (last input to decision): {avg_lat_last:.1f} ms  "
+            f"\nAverage Latency (first input to decision): {avg_lat_first:.1f} ms  "
+            
+            
+        )
 
 
         

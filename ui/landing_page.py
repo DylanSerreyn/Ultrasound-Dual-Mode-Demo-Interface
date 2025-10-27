@@ -25,7 +25,6 @@ class LandingPage(QWidget):
         self.dont_click_btn.clicked.connect(self._dont_click_handler)
         self._dont_click_stage = 0
         
-
         layout = QVBoxLayout()
         layout.addWidget(title)
         layout.addSpacing(12)
@@ -42,6 +41,9 @@ class LandingPage(QWidget):
             self.dont_click_btn.setText("I said DON'T click")
         elif self._dont_click_stage == 2:
             self.dont_click_btn.setText(":( ")
+            self.dont_click_btn.setStyleSheet(
+                "QPushButton { background-color: #26c6da; color: white; font-weight: bold; }"
+            )
         elif self._dont_click_stage >= 3:
             from PySide6.QtWidgets import QApplication
             QApplication.quit()

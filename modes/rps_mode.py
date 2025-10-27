@@ -9,7 +9,7 @@ class RPSMode:
 
     '''
 
-    def __init__(self, countdown_ms=0, window_ms=1000, k_samples=5):
+    def __init__(self, countdown_ms=0, window_ms=2000, k_samples=5):
         self.countdown_ms = countdown_ms
         self.window_ms = window_ms
         self.k_samples = k_samples 
