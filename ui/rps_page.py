@@ -308,9 +308,7 @@ class RPSPage(QWidget):
             f"Average Confidence: {avg_conf:.2f}  | "
             f"Average N_Samples: {avg_n:.1f} |"
             f"\nAverage Latency (last input to decision): {avg_lat_last:.1f} ms  "
-            f"\nAverage Latency (first input to decision): {avg_lat_first:.1f} ms  "
-            
-            
+            f"\nAverage Latency (first input to decision): {avg_lat_first:.1f} ms  "   
         )
 
 

@@ -17,10 +17,8 @@ class LandingPage(QWidget):
         tracker_btn.setFixedHeight(48)
         tracker_btn.clicked.connect(on_tracker_clicked)
 
-#-------------------------------------------------
-# haha
-#-------------------------------------------------
-        self.dont_click_btn = QPushButton("Don't click")
+
+        self.dont_click_btn = QPushButton("Exit")
         self.dont_click_btn.setFixedHeight(40)
         self.dont_click_btn.clicked.connect(self._dont_click_handler)
         self._dont_click_stage = 0
@@ -35,15 +33,5 @@ class LandingPage(QWidget):
         self.setLayout(layout)
 
     def _dont_click_handler(self):
-        """Cycles through funny warnings, then exits the app."""
-        self._dont_click_stage += 1
-        if self._dont_click_stage == 1:
-            self.dont_click_btn.setText("I said DON'T click")
-        elif self._dont_click_stage == 2:
-            self.dont_click_btn.setText(":( ")
-            self.dont_click_btn.setStyleSheet(
-                "QPushButton { background-color: #26c6da; color: white; font-weight: bold; }"
-            )
-        elif self._dont_click_stage >= 3:
             from PySide6.QtWidgets import QApplication
             QApplication.quit()

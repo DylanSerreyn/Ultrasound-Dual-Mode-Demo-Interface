@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QMainWindow, QWidget, QStackedWidget
 from app.ui.landing_page import LandingPage
 from app.ui.rps_page import RPSPage
+from app.ui.tracker_page import TrackerPage
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -14,12 +15,14 @@ class MainWindow(QMainWindow):
         # Pages
         self.landing = LandingPage(
             on_rps_clicked=self._go_rps,
-            on_tracker_clicked=self._go_tracker_stub
+            on_tracker_clicked=self._go_tracker
         )
         self.rps = RPSPage(on_back_clicked=self._go_landing)
+        self.tracker = TrackerPage(on_back_clicked=self._go_landing)
 
         self.stack.addWidget(self.landing) # index 0
         self.stack.addWidget(self.rps)     # index 1
+        self.stack.addWidget(self.tracker) # index 2
 
         self.stack.setCurrentIndex(0)
 
@@ -29,6 +32,5 @@ class MainWindow(QMainWindow):
     def _go_rps(self):
         self.stack.setCurrentIndex(1)
 
-    def _go_tracker_stub(self):
-        # Don't have that yet
-        pass
+    def _go_tracker(self):
+        self.stack.setCurrentIndex(2)
