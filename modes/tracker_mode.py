@@ -77,11 +77,7 @@ class TrackerMode:
 
     def finished(self) -> bool:
         """"""
-        if not self._running or self._t0 is None:
-            return False
-        if not self.times:
-            return False 
-        return self.times[-1] >= self.cfg.duration_s
+        return bool(self.times) and (self.times[-1] >= self.cfg.duration_s)
     
     #------------------------------------------------
     # Main ticking API
@@ -203,7 +199,7 @@ class TrackerMode:
         x0 = x - np.mean(x)
         y0 = y - np.mean(y)
         corr = np.correlate(y0, x0, mode="full") # Correlate user vs target
-        lags = np.arrange(-len(x) + 1, len(x), dtype=np.float64)
+        lags = np.arange(-len(x) + 1, len(x), dtype=np.float64)
         k_best = int(lags[np.argmax(corr)])
         lag_ms = float(k_best * dt * 1000.0)
 
