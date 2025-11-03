@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLa
 from PySide6.QtCore import Qt, QTimer
 
 from app.modes.tracker_mode import TrackerMode, TrackerConfig
+from pyqtgraph import PlotWidget
 
 class TrackerPage(QWidget):
     def __init__(self, on_back_clicked, parent=None):
@@ -24,6 +25,26 @@ class TrackerPage(QWidget):
         self.readout = QLabel("t = - s   target = -   user = -")
         self.readout.setAlignment(Qt.AlignCenter)
         self.readout.setStyleSheet("font-size: 14px; margin: 6px;")
+
+        # Live Plot
+        self.plot = PlotWidget()
+        self.plot.setBackground('w')
+        self.plot.showGrid(x=True, y=True, alpha=0.25)
+        self.plot.setLabel('bottom', 'Time', units='s')
+        self.plot.setLabel('left', 'value', units='')
+        self.plot.setYRange(-1.1, 1.1)
+        # x-range depends on trial duration
+
+        # Target and User curves and markers
+        self._target_curve = self.plot.plot(pen={'color': (58, 168, 50), 'width': 4}, name='Target')
+        self._user_curve   = self.plot.plot(pen={'color': (144, 50, 191), 'width': 2}, name='User')
+
+        self._target_dot = self.plot.plot(
+            [], [], pen=None, symbol='o', symbolSize=18, symbolBrush=(58, 168, 50)
+        )
+        self._user_dot = self.plot.plot(
+            [], [], pen=None, symbol='o', symbolSize=12, symbolBrush=(144, 50, 191)
+        )
 
         # Buttons
         self.start_btn = QPushButton("Start Trial")
@@ -45,6 +66,7 @@ class TrackerPage(QWidget):
         layout = QVBoxLayout()
         layout.addWidget(title)
         layout.addWidget(self.status)
+        layout.addWidget(self.plot)
         layout.addWidget(self.readout)
         layout.addStretch()
         layout.addLayout(btn_row)
@@ -67,11 +89,11 @@ class TrackerPage(QWidget):
 
         # Mode engine 
         cfg = TrackerConfig(
-            duration_s=10.0,        # 10 Second trials
+            duration_s=15.0,        # 15 Second trials
             tick_hz=self._tick_hz,  # for metrics' lag
             target_kind="sine",     # Generate sine wave
-            target_freq_hz=0.3,     # ~3.3 s period
-            target_amplitude=0.9,   
+            target_freq_hz=0.15,     # period
+            target_amplitude=0.7,   
             stabilize_user=False,
             stabilize_alpha=0.15,
         )
@@ -86,8 +108,8 @@ class TrackerPage(QWidget):
         # Physics params (needs tuning)
         self._user_value = 0.0        # Current slider value in [-1, 1]
         self._velocity = 0.0          # Internal velocity
-        self._accel = 2.2             # units per second^2 when holding a key
-        self._damping = 3.0           # velocity damping
+        self._accel = 3.5             # units per second^2 when holding a key
+        self._damping = 2.0           # velocity damping
         self._vmax = 3.0              # clamp velocity max
         self._last_tick_time = None   # perf_counter of last tick for dt
 
@@ -108,7 +130,17 @@ class TrackerPage(QWidget):
         self._up_pressed = False
         self._down_pressed = False
         self._last_tick_time = None
-        self.mode.start()
+        
+
+        #Prep plot for new trial
+        self._window_s = self.mode.cfg.duration_s
+        self._target_curve.setData([], [])
+        self._user_curve.setData([], [])
+        self._target_dot.setData([], [])
+        self._user_dot.setData([], [])
+        self.plot.setXRange(0, self._window_s, padding=0.0)
+        self._plot_every_n = 2
+        self._plot_counter = 0
 
         # Countdown
         self.status.setText("Get Ready...")
@@ -132,6 +164,12 @@ class TrackerPage(QWidget):
         if not self.grabbed_keyboard:
             self.grabKeyboard()
             self.grabbed_keyboard = True
+
+        # Start trial clock
+        self.mode.start()
+
+        # Lock plot x-axis to right edge = now 
+        self.plot.setXRange(0 - self._window_s, 0, padding=0.0)
 
         # Start ticker
         self._last_tick_time = time.perf_counter()
@@ -183,6 +221,23 @@ class TrackerPage(QWidget):
             f"t = {state['t']:.2f} s  target = {state['target']:+.3f}  user = {state['user']:+.3f}"
         )
 
+        # Throttle plot updates
+        self._plot_counter += 1
+        if self._plot_counter % self._plot_every_n == 0:
+            #Use engine buffers
+            self._target_curve.setData(self.mode.times, self.mode.target_vals)
+            self._user_curve.setData(self.mode.times, self.mode.user_vals)
+
+        # Move target and user markers
+        t_now_s = state['t']
+        self._target_dot.setData([t_now_s], [state['target']])
+        self._user_dot.setData([t_now_s], [state['user']])
+
+        # Slide the plot window
+        left = max(0.0, t_now_s - self._window_s)
+        right = t_now_s
+        self.plot.setXRange(left, right, padding=0.05)
+
         # Stop
         if self.mode.finished():
             self._end_trial()
@@ -195,6 +250,10 @@ class TrackerPage(QWidget):
         if self.grabbed_keyboard:
             self.releaseKeyboard()
             self.grabbed_keyboard = False
+
+        # Final plot refresh
+        self._target_curve.setData(self.mode.times, self.mode.target_vals)
+        self._user_curve.setData(self.mode.times, self.mode.user_vals)
 
         self.mode.stop()
         metrics = self.mode.compute_metrics()
