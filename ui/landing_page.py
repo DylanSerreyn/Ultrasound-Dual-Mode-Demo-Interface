@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton
 from PySide6.QtCore import Qt 
 
 class LandingPage(QWidget):
-    def __init__(self, on_rps_clicked, on_tracker_clicked, parent=None):
+    def __init__(self, on_rps_clicked, on_tracker_clicked, on_test_clicked, parent=None):
         super().__init__(parent)
 
         title = QLabel("Ultrasound Demo Interface")
@@ -17,6 +17,9 @@ class LandingPage(QWidget):
         tracker_btn.setFixedHeight(48)
         tracker_btn.clicked.connect(on_tracker_clicked)
 
+        test_btn = QPushButton("Test Mode")
+        test_btn.setFixedHeight(48)
+        test_btn.clicked.connect(on_test_clicked)
 
         self.dont_click_btn = QPushButton("Exit")
         self.dont_click_btn.setFixedHeight(40)
@@ -28,6 +31,7 @@ class LandingPage(QWidget):
         layout.addSpacing(12)
         layout.addWidget(rps_btn)
         layout.addWidget(tracker_btn)
+        layout.addWidget(test_btn)
         layout.addWidget(self.dont_click_btn) # haha
         layout.addStretch()
         self.setLayout(layout)
