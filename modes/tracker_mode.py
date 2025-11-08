@@ -22,11 +22,11 @@ class TrackerConfig:
     Tunable configuration for a single trial
     """
 
-    duration_s: float = 15.0 
+    duration_s: float = 25.0 
     tick_hz: float = 50.0
-    target_kind: TargetKind = "sine"
-    target_freq_hz: float = 0.3
-    target_amplitude: float = 0.9
+    target_kind: TargetKind = "steps"
+    target_freq_hz: float = 0.15
+    target_amplitude: float = 0.7
     target_phase: float = 0.0
     stabilize_user: bool = False 
     stabilize_alpha: float = 0.15
@@ -153,10 +153,10 @@ class TrackerMode:
         f = float(self.cfg.target_freq_hz)
         
         # 
-        segment_s = 0.5 / f
+        segment_s = 0.7 / f
 
         # define levels for the "staircase"
-        levels = (-A, -0.5 * 5, 0.0, 0.5 * A, A, 0.5 * A, 0.0, -0.5 * A)
+        levels = (0.0, 0.5 * A, A, 0.5 * A, 0.0, -0.5 * A, -A, -0.5 * A)
         idx = int(t // segment_s) % len(levels)
 
         return _clamp(levels[idx], -1.0, 1.0)

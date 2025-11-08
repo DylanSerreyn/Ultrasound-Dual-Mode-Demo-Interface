@@ -106,13 +106,25 @@ class TrackerPage(QWidget):
         self.grabbed_keyboard = False
 
         # Physics params (needs tuning)
+        # params for step wave:
+        '''
         self._user_value = 0.0        # Current slider value in [-1, 1]
         self._velocity = 0.0          # Internal velocity
-        self._accel = 3.5             # units per second^2 when holding a key
-        self._damping = 2.0           # velocity damping
+        self._accel = 5.0             # units per second^2 when holding a key
+        self._damping = 5.0           # velocity damping
         self._vmax = 3.0              # clamp velocity max
         self._last_tick_time = None   # perf_counter of last tick for dt
+        '''
 
+        # params for sine wave:
+        
+        self._user_value = 0.0        # Current slider value in [-1, 1]
+        self._velocity = 0.0          # Internal velocity
+        self._accel = 5.0             # units per second^2 when holding a key
+        self._damping = 3.0           # velocity damping
+        self._vmax = 3.0              # clamp velocity max
+        self._last_tick_time = None   # perf_counter of last tick for dt
+        
         #------------------------------
         # Countdown Flow
         #------------------------------
