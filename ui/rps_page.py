@@ -1,11 +1,13 @@
 import random 
 import time
 import queue
+from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal, QThread, QTimer, Qt 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame
 )
+from PySide6.QtSvgWidgets import QSvgWidget
 
 from app.modes.rps_mode import RPSMode
 
@@ -80,6 +82,16 @@ class RPSPage(QWidget):
         self._sum_lat_last = 0.0
         self._sum_lat_first = 0.0
         self._sum_n = 0
+
+        # SVG  gesture Icons Directory
+        self._gesture_icon_dir = (
+            Path(__file__).resolve().parent.parent / "assets" / "gestures"
+        )
+
+        # SVG W/L/T icons directory 
+        self._other_icon_dir = (
+            Path(__file__).resolve().parent.parent / "assets" / "other"
+        )
 
         # Title
         title = QLabel("Rock-Paper-Scissors")
@@ -184,15 +196,86 @@ class RPSPage(QWidget):
             v.addWidget(hlabel)
             v.addWidget(vlabel)
             v.addWidget(self.score_label)
+
+            # Add SVG icon
+            icon = QSvgWidget()
+            icon.setFixedSize(100, 100)
+            v.addWidget(icon, alignment=Qt.AlignCenter)
+            frame._icon_widget = icon
         else:
             v.addWidget(hlabel)
             v.addWidget(vlabel)
+
+            icon = QSvgWidget()
+            icon.setFixedSize(140, 140)
+
+            # Load default REST
+            rest_icon = getattr(self, "_gesture_icon_dir", None)
+            if rest_icon is not None:
+                svg_path = self._gesture_icon_dir / "rest.svg"
+                if svg_path.exists():
+                    icon.load(str(svg_path))
+
+            v.addWidget(icon, alignment=Qt.AlignCenter)
+            frame._icon_widget = icon
 
         frame._value_label = vlabel # Store for updates
         return frame 
     
     def _set_box_value(self, box: QFrame, text: str):
         box._value_label.setText(text)
+
+    def _update_gesture_icon(self, box: QFrame, gesture: str):
+        """
+        Load the proper svg icon 
+        """
+        icon = getattr(box, "_icon_widget", None)
+        if icon is None:
+            return
+        if not hasattr(self, "_gesture_icon_dir"):
+            return
+        
+        filename = gesture.lower() + ".svg"
+        svg_path = self._gesture_icon_dir / filename
+
+        if not svg_path.exists():
+            svg_path = self._gesture_icon_dir / "rest.svg"
+            if not svg_path.exists():
+                return
+        
+        icon.load(str(svg_path))
+        icon.update()
+
+    def _update_outcome_icon(self, outcome: str):
+        """
+        adding win, lose, or tie icons
+        """
+        box = self.outcome_box
+        icon = getattr(box, "_icon_widget", None)
+        if icon is None:
+            return
+        
+        if not hasattr(self, "_other_icon_dir"):
+            return
+        
+        filename = None
+        if outcome == "WIN":
+            filename = "win.svg"
+        elif outcome == "LOSE":
+            filename = "lose.svg"
+        elif outcome == "TIE":
+            filename = "tie.svg"
+
+        if filename:
+            svg_path = self._other_icon_dir / filename
+            if svg_path.exists():
+                icon.load(str(svg_path))
+                icon.show()
+            else:
+                icon.hide()
+        else:
+            icon.hide()
+
 
     #-------------------------Trial Control----------------------------
     def keyPressEvent(self, event):
@@ -208,6 +291,9 @@ class RPSPage(QWidget):
         self._set_box_value(self.your_pred_box, "-")
         self._set_box_value(self.outcome_box, "-")
         self._set_box_value(self.opp_box, "-")
+        self._update_gesture_icon(self.your_pred_box, "REST")
+        self._update_gesture_icon(self.opp_box, "REST")
+        self._update_outcome_icon("")
         self.metrics.setText("Confidence: -  Latency(last): - ms  Latency(first): - ms  (n=-, window=- ms )")
         self.status.setText("Get ready...")
         self.setFocus()
@@ -249,8 +335,12 @@ class RPSPage(QWidget):
         # Update UI With Results
         self.releaseKeyboard()
         user_choice = result["prediction"]
+
         self._set_box_value(self.your_pred_box, user_choice)
+        self._update_gesture_icon(self.your_pred_box, user_choice)
+
         self._set_box_value(self.opp_box, opponent)
+        self._update_gesture_icon(self.opp_box, opponent)
 
         # Outcome + Scoreboard
         out = outcome(user_choice, opponent)
@@ -270,6 +360,7 @@ class RPSPage(QWidget):
         self._sum_n += result.get("n_samples", 0)
 
         self._set_box_value(self.outcome_box, out)
+        self._update_outcome_icon(out)
         self.score_label.setText(
             f"Wins: {self.win_count}  Losses: {self.lose_count}  Ties: {self.tie_count}"
         )

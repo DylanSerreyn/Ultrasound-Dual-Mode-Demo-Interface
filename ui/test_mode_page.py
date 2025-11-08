@@ -1,6 +1,7 @@
 from __future__ import annotations
 import time
 import math
+from pathlib import Path
 
 from PySide6.QtWidgets import (
     QWidget,
@@ -12,6 +13,7 @@ from PySide6.QtWidgets import (
     QSlider,
 )
 from PySide6.QtCore import Qt, QTimer
+from PySide6.QtSvgWidgets import QSvgWidget
 
 
 class TestModePage(QWidget):
@@ -47,6 +49,22 @@ class TestModePage(QWidget):
 
         discrete_layout.addWidget(self.current_label)
         discrete_layout.addWidget(hint)
+        
+        # SVG Gesture Icon Setup
+        self._gesture_icon_dir = (
+            Path(__file__).resolve().parent.parent / "assets" / "gestures"
+        )
+
+        self.gesture_icon = QSvgWidget()
+        self.gesture_icon.setFixedSize(160, 160)
+
+        # Load the initial REST icon
+        rest_icon = self._gesture_icon_dir / "rest.svg"
+        if rest_icon.exists():
+            self.gesture_icon.load(str(rest_icon))
+
+        # You know we centering that icon
+        discrete_layout.addWidget(self.gesture_icon, alignment=Qt.AlignCenter)
         self.discrete_container.setLayout(discrete_layout)
 
         # Continuous View Container
@@ -195,6 +213,26 @@ class TestModePage(QWidget):
         self._current_gesture = gesture
         self._last_change_time = time.perf_counter()
         self.current_label.setText(f"Current Gesture: {gesture}")
+        self._update_gesture_icon(gesture)
+
+    def _update_gesture_icon(self, gesture: str):
+        """
+        Loads the correct svg file
+        """
+        if not hasattr(self, "_gesture_icon_dir"):
+            return
+        
+        filename = gesture.lower() + ".svg"
+        svg_path = self._gesture_icon_dir / filename
+
+        # If the icon doesn't exist fall back to rest
+        if not svg_path.exists():
+            svg_path = self._gesture_icon_dir / "rest.svg"
+            if not svg_path.exists():
+                return
+            
+        self.gesture_icon.load(str(svg_path))
+        self.gesture_icon.update()
 
     def _check_timeout(self):
         """
@@ -212,6 +250,7 @@ class TestModePage(QWidget):
             self._current_gesture = "REST"
             self._last_change_time = None
             self.current_label.setText("Current Gesture: REST")
+            self._update_gesture_icon("REST")
 
     def _cont_tick(self):
         """
