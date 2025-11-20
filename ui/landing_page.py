@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QSizePolicy
 from PySide6.QtCore import Qt 
 
 class LandingPage(QWidget):
@@ -21,21 +21,39 @@ class LandingPage(QWidget):
         test_btn.setFixedHeight(48)
         test_btn.clicked.connect(on_test_clicked)
 
-        self.dont_click_btn = QPushButton("Exit")
-        self.dont_click_btn.setFixedHeight(40)
-        self.dont_click_btn.clicked.connect(self._dont_click_handler)
-        self._dont_click_stage = 0
-        
-        layout = QVBoxLayout()
-        layout.addWidget(title)
-        layout.addSpacing(12)
-        layout.addWidget(rps_btn)
-        layout.addWidget(tracker_btn)
-        layout.addWidget(test_btn)
-        layout.addWidget(self.dont_click_btn) # haha
-        layout.addStretch()
-        self.setLayout(layout)
+        self.exit_btn = QPushButton("Exit")
+        self.exit_btn.setFixedHeight(40)
+        self.exit_btn.clicked.connect(self._exit_click_handler)
 
-    def _dont_click_handler(self):
+        for btn in (rps_btn, tracker_btn, test_btn):
+             btn.setMinimumHeight(44)
+             btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
+        
+        main_layout = QVBoxLayout(self)
+        #main_layout.setContentsMargins(40, 40, 40, 40)
+        main_layout.setSpacing(20)
+        main_layout.addWidget(title)
+
+        # Mode buttons (Center Column)
+        center_widget = QWidget()
+        center_layout = QHBoxLayout(center_widget)
+        center_layout.setSpacing(6)
+
+        
+        center_layout.addSpacing(8)
+        center_layout.addWidget(rps_btn)
+        center_layout.addWidget(tracker_btn)
+        center_layout.addWidget(test_btn)
+
+        main_layout.addWidget(center_widget, alignment=Qt.AlignHCenter)
+
+        main_layout.addStretch()
+        main_layout.addWidget(self.exit_btn, alignment=Qt.AlignRight)
+
+        self.setLayout(main_layout)
+
+
+    def _exit_click_handler(self):
             from PySide6.QtWidgets import QApplication
             QApplication.quit()

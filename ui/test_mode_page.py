@@ -43,7 +43,7 @@ class TestModePage(QWidget):
         self.current_label.setAlignment(Qt.AlignCenter)
         self.current_label.setStyleSheet("font-size: 20px; font-weight: 600; margin: 12px;")
 
-        hint = QLabel("Press R / P / S. If idle for 5 seconds -> REST")
+        hint = QLabel("Press R / P / S. If idle for 3 seconds -> REST")
         hint.setAlignment(Qt.AlignCenter)
         hint.setStyleSheet("font-size: 12px; color: #777; margin-bottom: 4px;")
 
@@ -124,7 +124,7 @@ class TestModePage(QWidget):
 
         self._current_gesture = "REST"
         self._last_change_time: float | None = None
-        self._timeout_s = 3.0 # 3 Seconds before returning to REST
+        self._timeout_s = 2.0 # 3 Seconds before returning to REST
 
         # Timer for REST timeout
         self._timer = QTimer(self)
